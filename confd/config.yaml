@@ -1,0 +1,12 @@
+POSTGRES:
+  DB_SERVER: your-postgre-aiven-database-server-name-on.aivencloud.com
+  DB_USER: avnadmin
+  DB_PORT_NUMBER: 21882
+  DB_NAME: website_availability
+  DB_TABLE: website_availability_metrics
+
+KAFKA:
+  KAFKA_BOOTSTRAP_SERVERS: your-kafka-bootsrap-server-on.aivencloud.com
+  KAFKA_PORT_NUMBER: 21884
+  KAFKA_TOPIC: your-kafka-top-name
+

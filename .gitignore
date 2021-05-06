@@ -11,3 +11,4 @@ pip-log.txt
 *.key
 *.cert
 *.pem
+*.bak
