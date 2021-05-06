@@ -33,9 +33,6 @@ commands = (
         CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
     ''',
     f'''
-        CREATE DATABASE IF NOT EXISTS {DB_NAME}
-    ''',
-    f'''
         CREATE TABLE IF NOT EXISTS {DB_TABLE}(
                 id uuid DEFAULT uuid_generate_v4(),
                 url VARCHAR(255),
