@@ -2,12 +2,15 @@ import psycopg2
 import time
 import re
 import json
+import logging
 from kafka import KafkaConsumer
 from datetime import datetime
 
 from configs.configs import URLS, KAFKA_HOST, KAFKA_PORT, KAFKA_TOPIC, KAFKA_SSL_KEY, \
         KAFKA_SSL_CERTIFICATE, KAFKA_SSL_CA, KAFKA_PASSWORD, DB_SERVER, \
         DB_PORT, DB_NAME, DB_TABLE, DB_USERNAME, DB_PASSWORD
+
+logging.basicConfig(format='%(asctime)s - %(message)s', datefmt='%d-%b-%y %H:%M:%S')
 
 consumer = KafkaConsumer(
     KAFKA_TOPIC,
@@ -19,7 +22,7 @@ consumer = KafkaConsumer(
     ssl_password=KAFKA_PASSWORD,
     value_deserializer=lambda x: json.loads(x.decode('utf-8')),
     api_version=(0, 10, 1),
-    group_id=f'{KAFKA_TOPIC}_0'
+    group_id=f'{KAFKA_TOPIC}_00'
 )
 
 SQL = f"INSERT INTO {DB_TABLE}(url, name, page_title, error_code, error_reason, elapse_time, http_response_header_time, http_response_time)"
@@ -28,6 +31,9 @@ SQL = f"INSERT INTO {DB_TABLE}(url, name, page_title, error_code, error_reason, 
 commands = (
     '''
         CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
+    ''',
+    f'''
+        CREATE DATABASE IF NOT EXISTS {DB_NAME}
     ''',
     f'''
         CREATE TABLE IF NOT EXISTS {DB_TABLE}(
@@ -56,8 +62,6 @@ def connect():
         )
 
         cur = conn.cursor()
-        cur.execute('SELECT version()')
-        print(cur.fetchall())
         for command in commands:
             cur.execute(command)
             conn.commit()
@@ -68,14 +72,13 @@ def connect():
             VALUE = (
                 message['url'],
                 message['name'],
-                message['title'],
+                message['title'].replace("'", '"'),
                 message['error_code'],
                 message['error_reason'],
                 message['elapse_time'],
                 message['http_response_header_time'],
                 message['http_response_time']
             )
-            print(VALUE)
 
             cur.execute(f'{SQL} VALUES {VALUE};')
             conn.commit()
@@ -83,7 +86,7 @@ def connect():
         return conn
 
     except Exception as error:
-        log(error)
+        logging.error(error)
     finally:
         if conn is not None:
             conn.close()
