@@ -6,4 +6,8 @@ venv/
 .env
 *.log
 pip-log.txt
-
+*.db
+*.ka
+*.key
+*.cert
+*.pem
