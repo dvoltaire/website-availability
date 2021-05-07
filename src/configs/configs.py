@@ -1,8 +1,8 @@
 import os
 import yaml
-from glob import glob
-import logging
 import sys
+from glob import glob
+from log import log
 
 __all__ = [
     'DB_SERVER',
@@ -25,12 +25,10 @@ path, _ = os.path.split(os.path.realpath(__file__))
 
 os.chdir(path)
 
-logging.basicConfig(format='%(asctime)s - %(message)s', datefmt='%d-%b-%y %H:%M:%S')
-
 def get_file_path(name):
     filename = glob(name)
     if len(filename) != 1:
-        logging.error(f'Ambiguity, We expext only 5 files, one of each' \
+        log.error(f'Ambiguity, We expext only 5 files, one of each' \
                 '[*.txt(2), *.key, *.cert, *.pem] end in secrets/ directory.')
     if filename:
         return os.path.abspath(os.path.join(os.path.dirname(__file__), (glob(name)[0])))
@@ -55,7 +53,7 @@ def load_configs():
                 [url.strip() for url in url_file.readlines()],
             ]
     except Exception as e:
-        logging.error(e)
+        log.error(e)
         sys.exit(101)
 
 DB_PASSWORD, KAFKA_PASSWORD, CONFIG, URLS = load_configs()

@@ -3,15 +3,34 @@ import asyncio
 import time
 import re
 import json
-import logging
-from kafka import KafkaProducer
+from kafka import KafkaProducer, KafkaClient
+from kafka.admin import KafkaAdminClient, NewTopic
 from datetime import datetime
 
-from configs.configs import URLS, KAFKA_HOST, KAFKA_PORT, KAFKA_TOPIC, KAFKA_SSL_KEY, KAFKA_SSL_CERTIFICATE, KAFKA_SSL_CA, KAFKA_PASSWORD
+from configs.log import log
+from configs.configs import URLS, KAFKA_HOST, KAFKA_PORT, KAFKA_TOPIC, \
+    KAFKA_SSL_KEY, KAFKA_SSL_CERTIFICATE, KAFKA_SSL_CA, KAFKA_PASSWORD
 
-logging.basicConfig(format='%(asctime)s - %(message)s', datefmt='%d-%b-%y %H:%M:%S')
+# Initializize client
+kafka_client = KafkaClient(
+    bootstrap_servers=f'{KAFKA_HOST}:{KAFKA_PORT}',
+    security_protocol='SSL',
+    ssl_cafile=KAFKA_SSL_CA,
+    ssl_certfile=KAFKA_SSL_CERTIFICATE,
+    ssl_keyfile=KAFKA_SSL_KEY,
+    ssl_password=KAFKA_PASSWORD,
+)
 
-producer = KafkaProducer(
+kafka_admin = KafkaAdminClient(
+    bootstrap_servers=f'{KAFKA_HOST}:{KAFKA_PORT}',
+    security_protocol='SSL',
+    ssl_cafile=KAFKA_SSL_CA,
+    ssl_certfile=KAFKA_SSL_CERTIFICATE,
+    ssl_keyfile=KAFKA_SSL_KEY,
+    ssl_password=KAFKA_PASSWORD,
+)
+
+kafka_producer = KafkaProducer(
     bootstrap_servers=f'{KAFKA_HOST}:{KAFKA_PORT}',
     security_protocol='SSL',
     ssl_cafile=KAFKA_SSL_CA,
@@ -20,26 +39,37 @@ producer = KafkaProducer(
     value_serializer=lambda x: json.dumps(x).encode('utf-8'),
     ssl_password=KAFKA_PASSWORD,
     key_serializer=lambda x: json.dumps(x).encode('utf-8'),
-    api_version=(0, 10, 1)
 )
+# Do not assume the Kafka topic is already created.
+# This will create a default kafka topic with 3 partitions, and a replication factor 3..
+try:
+    future = kafka_client.cluster.request_update()
+    kafka_client.poll(future=future)
+
+    metadata = kafka_client.cluster
+
+    new_topic = [NewTopic(KAFKA_TOPIC, num_partitions=3, replication_factor=3)]
+    if not KAFKA_TOPIC in metadata.topics():
+        log.info('Create a new topic')
+        kafka_admin.create_topics(new_topic, validate_only=False)
+        time.sleep(10)
+except Exception as e:
+    log.error(e)
 
 def date_format(s):
     d_format = '%d %B %Y %H:%M:%S'
     return str(datetime.strptime(s, d_format))
 
 async def request(url, session):
-    start = time.perf_counter()
-    site_data = {}
-    current_time = datetime.now()
-    r_sent_date = current_time.strftime('%Y-%m-%d %H:%M:%S')
     try:
         async with session.get(url) as resp:
             current_time = datetime.now()
-            r_response_date = current_time.strftime('%Y-%m-%d %H:%M:%S')
-            r = await resp.text()
+            start = time.time()
+            r_date_time = current_time.strftime('%Y-%m-%d %H:%M:%S')
+            r_text = await resp.text()
             status = resp.status
             try:
-                title = re.findall('<title.*?>(.*?)</title>', r)[0]
+                title = re.findall('<title.*?>(.*?)</title>', r_text)[0]
             except:
                 title = 'N/A'
             WEB_METRICS = {
@@ -48,19 +78,21 @@ async def request(url, session):
                 'title': title,
                 'error_code': resp.status,
                 'error_reason': resp.reason,
-                'elapse_time': f'{time.perf_counter() - start:.5f}',
-                'http_response_header_time': date_format(re.findall('Date.*?,\s(.*?)\sGMT', str(resp.start))[0]),
-                'http_response_time': r_response_date, 
+                'elapse_time': f'{(time.time() - start):.5f}',
+                'http_response_time': r_date_time,
             }
-            producer.send(KAFKA_TOPIC, value=WEB_METRICS)
+
+            kafka_producer.send(KAFKA_TOPIC, value=WEB_METRICS)
+
     except Exception as e:
-        logging.error(e)
+        log.info(e)
     await asyncio.sleep(30)
+
 
 async def main():
     timeout = aiohttp.ClientTimeout(total=60)
     
-    connector = aiohttp.TCPConnector(ssl=False)
+    connector = aiohttp.TCPConnector(ssl=False, use_dns_cache=False)
     async with aiohttp.ClientSession(timeout=timeout, connector=connector) as session:
         tasks = []
         for url in URLS:

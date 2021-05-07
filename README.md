@@ -1,12 +1,13 @@
 # Website Availabilites
 
-This is a website checker that will perform checks periodically and collect the HTTP response time, error code returned, as well as optionally checking the returned page contents for a regexp pattern that is expected to be found on the page. To make it simple, I choose to collect the website title. 
-Those metrics will be sent to a kafka topics to be consume later and save to a PostgreSQL database.
-
 ## System  Architecture
 ![](https://i.imgur.com/Eu9Grwg.png)
 
 ![](https://i.imgur.com/bixtPhy.png)
+
+This is a website checker that will perform checks periodically and collect the HTTP response time, error code returned, as well as optionally checking the returned page contents for a regexp pattern that is expected to be found on the page. To make it simple, I choose to collect the website title.
+Those metrics will be sent to a kafka topics to be consume later and save to a PostgreSQL database.
+
 
 ## How does it work
 For This project, I use a managed postgres(12.6) database and a managed Kafka(2.7)  both hosted on Aiven.io  
@@ -52,6 +53,7 @@ python3 producer_metrics.py
 python3 consumer_metrics.py
 
 ```
+
 
 ### System Configuration
 There is a few configuration we need to run the application:
@@ -131,15 +133,10 @@ There is a `requirements.txt` with the all the depedencies to `pip install -r re
 
 The Kafka-producer is a Python application that will collect every 30 seconds a few metrics from a list of website. Those metrics are:
 
-# Metrics collected view from Kafka Producer:
-```json=
-{'url': 'https://www.homedepot.com/', 'name': 'www.homedepot.com', 'title': 'The Home Depot', 'error_code': 200, 'error_reason': 'OK', 'elapse_time': '4.12957', 'http_response_header_time': '2021-05-06 21:45:14', 'http_response_time': '2021-05-06 17:45:15'}
-06-May-21 17:45:16 - Cannot connect to host www.reddit.com:443 ssl:default [nodename nor servname provided, or not known]
-{'url': 'http://www.google.com/', 'name': 'www.google.com', 'title': 'Google', 'error_code': 200, 'error_reason': 'OK', 'elapse_time': '5.11332', 'http_response_header_time': '2021-05-06 21:45:15', 'http_response_time': '2021-05-06 17:45:16'}
-{'url': 'https://en.wikipedia.org/wiki/Main_Page', 'name': 'en.wikipedia.org', 'title': 'Wikipedia, the free encyclopedia', 'error_code': 200, 'error_reason': 'OK', 'elapse_time': '5.22930', 'http_response_header_time': '2021-05-06 20:18:09', 'http_response_time': '2021-05-06 17:45:16'}
-{'url': 'https://www.webmd.com/', 'name': 'www.webmd.com', 'title': 'WebMD - Better information. Better health.', 'error_code': 200, 'error_reason': 'OK', 'elapse_time': '5.34323', 'http_response_header_time': '2021-05-06 21:45:16', 'http_response_time': '2021-05-06 17:45:16'}
+# Metrics collected view from Kafka Consumer:
+![](https://i.imgur.com/WNpYr0v.png)
 
-```
+
 # Metrics Collected view from the Postgres DB
-![](https://i.imgur.com/v8fQMKe.jpg)
+![](https://i.imgur.com/zYFX9cP.jpg)
 
