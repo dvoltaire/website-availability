@@ -1,12 +1,12 @@
 # Website Availabilites
 
-## System  Architecture
-![](https://i.imgur.com/Eu9Grwg.png)
-
-
 This is a website checker that will perform checks periodically and collect the HTTP response time, error code returned, as well as optionally checking the returned page contents for a regexp pattern that is expected to be found on the page. To make it simple, I choose to collect the website title. 
 Those metrics will be sent to a kafka topics to be consume later and save to a PostgreSQL database.
 
+## System  Architecture
+![](https://i.imgur.com/Eu9Grwg.png)
+
+![](https://i.imgur.com/bixtPhy.png)
 
 ## How does it work
 For This project, I use a managed postgres(12.6) database and a managed Kafka(2.7)  both hosted on Aiven.io  
@@ -26,8 +26,32 @@ For simplicity, we collect a handful of metrics from those machines:
 - Date the request was made
 - The Error Code, HTTP-error 2xx, 4xx, 5xx, etc...
 - The Error Reason, `OK, Forbidden
-` 
+
 # How To Run the application.
+### Requirements:
+
+```bash=
+(venv) ❯ python --version                                                                                                                                      website-availability/git/main !
+Python 3.9.4
+(venv) ❯ ~❯ pip --version
+pip 21.1.1 from /usr/local/lib/python3.9/site-packages/pip (python 3.9)
+(venv) ❯
+
+and Optional
+~❯ virtualenv --version
+virtualenv 20.4.4 from /usr/local/lib/python3.9/site-packages/virtualenv/__init__.py
+~❯
+
+```
+ To Run the scripts, Follow the steps below for some simple system configuration, then change to the `src` directory and run:
+```sh=
+# To run the the producer:
+python3 producer_metrics.py
+
+# To run the consumer db:
+python3 consumer_metrics.py
+
+```
 
 ### System Configuration
 There is a few configuration we need to run the application:
@@ -117,5 +141,5 @@ The Kafka-producer is a Python application that will collect every 30 seconds a 
 
 ```
 # Metrics Collected view from the Postgres DB
-![](https://i.imgur.com/Q1kCyU3.jpg)
+![](https://i.imgur.com/v8fQMKe.jpg)
 
