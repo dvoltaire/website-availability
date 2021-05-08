@@ -8,23 +8,22 @@
 This is a website checker that will perform checks periodically and collect the HTTP response time, error code returned, as well as optionally checking the returned page contents for a regexp pattern that is expected to be found on the page. To make it simple, I choose to collect the website title.
 Those metrics will be sent to a kafka topics to be consume later and save to a PostgreSQL database.
 
-
 ## How does it work
 For This project, I use a managed postgres(12.6) database and a managed Kafka(2.7)  both hosted on Aiven.io  
 
 ### Producer
-The producer is a Python kafka application  that periodically checks a target websites and sends the check results to a managed Kafka topic hosted on Aiven.io. 
+The producer is a Python kafka application  that periodically checks a target websites and sends the check results to a managed Kafka topic hosted on Aiven.io. The application will create the topics if it does not exist, that start collecting the date asynchronically and push them to the Kafka servers.
 
 ### Consumer
-There is also python Kafka application consumer that stors those  data to an Aiven managed PostgreSQL database. 
+The python Kafka application consumer is a postgres/kafka application written in Python which jobs is to retrieve those data from the Kafka Topic and to store them on Aiven managed PostgreSQL database.
 
 ### Metrics Collected
-For simplicity, we collect a handful of metrics from those machines:
-- Website site name
-- Website page Title
-- TTFB, Time to first bye, the elapsed time
-- Date the page was generated
-- Date the request was made
+For simplicity, we collect a very small of metrics data from those websites:
+- url: The actual used for the web-request.
+- name: Website site name.
+- Title: Website page Title.
+- Elapsed Time, The Time to first byte.
+- Date the request was made.
 - The Error Code, HTTP-error 2xx, 4xx, 5xx, etc...
 - The Error Reason, `OK, Forbidden
 
@@ -44,7 +43,8 @@ virtualenv 20.4.4 from /usr/local/lib/python3.9/site-packages/virtualenv/__init_
 ~❯
 
 ```
- To Run the scripts, Follow the steps below for some simple system configuration, then change to the `src` directory and run:
+The producer and consumer scripts use the same config file. We have to run separately either in the same machine or on two different machines or environment. The only requirements is to update the configuration and secrets directory with the correct data and secrets to access the Database and the Kafka server.
+
 ```sh=
 # To run the the producer:
 python3 producer_metrics.py
@@ -54,41 +54,48 @@ python3 consumer_metrics.py
 
 ```
 
+There is also a docker-compose file, both scrips can be run with just one command after adding the necessary config files, just run:
+```sh=
+# The first time only use the command below to build the images.
+docker-compose up --build -d
+
+# Next time just run
+docker-compose up -d
+
+# When finishing running the app
+docker-compose down -v
+```
 
 ### System Configuration
-There is a few configuration we need to run the application:
+The configuration is very minimal, just a few files certificates and password to access the database and Kafka  to download from the Aiven.io under the overview section on the specific database services.
+
+![](https://i.imgur.com/VG2UEjD.png)
+
 There is this an empty folder `confd/secrets/` at the root of the repo, create those files.
 
 `confd/secrets/database_password.db` : The posgres Database with access right to write to the to the database service hosted on Aiven.io. That paswword db file can be any name as soon as it ends with the extension `.db` lower case.
 
-`confd/secrets/kafka_password.ka`: This file hold the password to connect to the Kafka services. This file can be any nane, just one requirements, the name should end with the extension `.ka` lower case.
+`confd/secrets/kafka_password.ka`: This file hold the password to connect to the Kafka services. This file can be any nane, just one requirements, the name should end with the extension `.ka`.
 
-This is the same for those SSL certificate files below. They are additional secrets files to use to connect to the kafka service.
+This is the same for those SSL certificate files below to use when accessing Kafka.
 confd/secrets/ca.pem
 confd/secrets/service.cert
 confd/secrets/service.key
 
-Those files and passwords can be found under their respectives service on Aiven.io websites. They are not on the repo, check the `.gitignore` file
-
-confd/secrets/
-├── ca.pem
-├── database_password.db
-├── kafka_password.ka
-├── service.cert
-└── service.key
+![](https://i.imgur.com/3T3x8kj.png)
 
 ### Additional Config file
 
 This file `confd/config.yaml` is a yaml file with few fied to be field prior running the script.
-- Code block with color and line numbers：
+
 ```yaml=
 POSTGRES:
   DB_SERVER: your-pg-cloud-db-url-hosted-on.aivencloud.com
-  DB_USER: db-user-name
+  DB_USER: db-user-name-with-access-right-to-create-table-and-db
   DB_PORT_NUMBER: 21882
-  DB_NAME: website_availability-but-you-can-change-me
-  DB_TABLE: website_availability_metrics-you-can-change-me
-  DB_DEFAULT: defaultdb
+  DB_NAME: add_the_name_of_the_database_to_save_the_metrics
+  DB_TABLE: the_table_name_for_the_metrics
+  DB_DEFAULT: the_name_to_use_when_login_can_be_same_as_DB_NAME_above
 
 KAFKA:
   KAFKA_BOOTSTRAP_SERVERS: your-kafka-db-url-hosted-on.aivencloud.com
@@ -96,6 +103,10 @@ KAFKA:
   KAFKA_TOPIC: your-topic-name
 
 ```
+After adding the missing ssl-certificates files and the kafka and postgres database files, the project tree should look like this, minus the log.data file. Those folders (secrets, logs) are now empty (with just a .gitkeep file).
+![](https://i.imgur.com/6TTX47y.png)
+
+
 - Web URLS
 The file with the web-urls is located at `confd/website_urls.txt`
 This file contains a list of websites to use during this experiments:
@@ -129,7 +140,7 @@ http://dictionary.com
 http://digitalocean.com
 ```
 ### Packages to install
-There is a `requirements.txt` with the all the depedencies to `pip install -r requirements.txt` prior running those producer and consumer scripts.
+There is a `requirements.txt` with the all the depedencies to `pip install -r requirements.txt` prior running the producer and consumer scripts.
 
 The Kafka-producer is a Python application that will collect every 30 seconds a few metrics from a list of website. Those metrics are:
 
