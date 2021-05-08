@@ -3,7 +3,7 @@ services:
   producer-metrics: 
     build:
       context: ./
-      dockerfile: ./pDockerfile
+      target: producer
     volumes:
       - ./confd:/app/confd
       - ./logs:/app/logs
@@ -11,7 +11,7 @@ services:
   consumer-metrics: 
     build: 
       context: ./
-      dockerfile: ./cDockerfile
+      target: consumer
     volumes:
       - ./confd:/app/confd
       - ./logs:/app/logs

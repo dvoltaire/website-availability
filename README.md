@@ -9,7 +9,7 @@ This is a website checker that will perform checks periodically and collect the 
 Those metrics will be sent to a kafka topics to be consume later and save to a PostgreSQL database.
 
 ## How does it work
-For This project, I use a managed postgres(12.6) database and a managed Kafka(2.7)  both hosted on Aiven.io  
+For This project, I use a managed postgres(12.6) database and a managed Kafka(2.7)  both hosted on Aiven.io
 
 ### Producer
 The producer is a Python kafka application  that periodically checks a target websites and sends the check results to a managed Kafka topic hosted on Aiven.io. The application will create the topics if it does not exist, that start collecting the date asynchronically and push them to the Kafka servers.
@@ -104,7 +104,8 @@ KAFKA:
 
 ```
 After adding the missing ssl-certificates files and the kafka and postgres database files, the project tree should look like this, minus the log.data file. Those folders (secrets, logs) are now empty (with just a .gitkeep file).
-![](https://i.imgur.com/6TTX47y.png)
+![](https://i.imgur.com/xOkQA3Y.png)
+
 
 
 - Web URLS

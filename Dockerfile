@@ -1,4 +1,4 @@
-FROM python:3.9.5
+FROM python:3.9.5 as producer
 
 WORKDIR /app
 
@@ -11,3 +11,7 @@ ADD src /app/src
 WORKDIR /app/src
 
 CMD python3.9 producer_metrics.py
+
+FROM producer as consumer
+
+CMD python3.9 consumer_metrics.py
