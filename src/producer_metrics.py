@@ -60,6 +60,9 @@ def date_format(s):
     d_format = '%d %B %Y %H:%M:%S'
     return str(datetime.strptime(s, d_format))
 
+async def produce_message(WEB_METRICS):
+    kafka_producer.send(KAFKA_TOPIC, value=WEB_METRICS)
+
 async def request(url, session):
     try:
         async with session.get(url) as resp:
@@ -76,17 +79,18 @@ async def request(url, session):
                 'url': str(resp.url),
                 'name': str(resp.host),
                 'title': title,
-                'error_code': resp.status,
+                'error_code':  resp.status,
                 'error_reason': resp.reason,
                 'elapse_time': f'{(time.time() - start):.5f}',
                 'http_response_time': r_date_time,
             }
-
-            kafka_producer.send(KAFKA_TOPIC, value=WEB_METRICS)
-
+            try:
+                await asyncio.wait_for(produce_message(WEB_METRICS), timeout=10)
+            except:
+                pass
     except Exception as e:
-        log.info(e)
-    await asyncio.sleep(30)
+        log.warning(e)
+    await asyncio.sleep(60)
 
 
 async def main():

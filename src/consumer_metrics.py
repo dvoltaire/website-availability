@@ -1,6 +1,5 @@
 import psycopg2
 import time
-import re
 import json
 from kafka import KafkaConsumer
 from datetime import datetime
@@ -77,7 +76,7 @@ def connect():
 
             cur.execute(f'{SQL} VALUES {VALUE};')
             conn.commit()
-        conn.commit()
+            time.sleep(1)
 
     except Exception as error:
         log.error(error)
