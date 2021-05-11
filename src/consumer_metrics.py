@@ -85,5 +85,6 @@ def connect():
             conn.close()
 
 if __name__ == '__main__':
-    connect()
+    while True:
+        connect()
 
