@@ -62,10 +62,10 @@ docker-compose up --build -d
 docker-compose up -d
 
 # To run just the producer:
-docker-compose up -d producer
+docker-compose up -d producer-metrics
 
 # To run just the consumer:
-docker-compose up -d consumer
+docker-compose up -d consumer-metrics
 
 # When finishing running the app
 docker-compose down -v
